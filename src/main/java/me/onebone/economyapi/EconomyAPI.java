@@ -29,6 +29,7 @@ import cn.nukkit.event.Listener;
 import cn.nukkit.event.player.PlayerJoinEvent;
 import cn.nukkit.plugin.PluginBase;
 import cn.nukkit.utils.Utils;
+import cn.nukkit.utils.TextFormat;
 import cn.nukkit.command.CommandSender;
 import me.onebone.economyapi.command.*;
 import me.onebone.economyapi.event.account.CreateAccountEvent;
@@ -77,7 +78,7 @@ public class EconomyAPI extends PluginBase implements Listener{
 		CreateAccountEvent event = new CreateAccountEvent(player, defaultMoney);
 		this.getServer().getPluginManager().callEvent(event);
 		if(!event.isCancelled() || force){
-			defaultMoney = event.getDefaultMoney() == -1D ? this.getConfig().get("money.default", 1000D) : event.getDefaultMoney();
+			defaultMoney = event.getDefaultMoney() == -1D ? this.getDefaultMoney() : event.getDefaultMoney();
 			return this.provider.createAccount(player, defaultMoney);
 		}
 		return false;
@@ -126,7 +127,7 @@ public class EconomyAPI extends PluginBase implements Listener{
 			if(this.provider.accountExists(player)){
 				amount = event.getAmount();
 				
-				if(amount <= this.getConfig().get("money.max", 9999999999D)){
+				if(amount <= this.getMaxMoney()){
 					this.provider.setMoney(player, amount);
 					return RET_SUCCESS;
 				}else{
@@ -163,7 +164,7 @@ public class EconomyAPI extends PluginBase implements Listener{
 			
 			double money;
 			if((money = this.provider.getMoney(player)) != -1){
-				if(money + amount > this.getConfig().get("money.max", 9999999999D)){
+				if(money + amount > this.getMaxMoney()){
 					return RET_INVALID;
 				}else{
 					this.provider.addMoney(player, amount);
@@ -223,7 +224,7 @@ public class EconomyAPI extends PluginBase implements Listener{
 			for(int i = 0; i < params.length; i++){
 				message = message.replace("%" + (i + 1), params[i]);
 			}
-			return message.replace("%MONETARY_UNIT%", this.getMonetaryUnit()); 
+			return TextFormat.colorize(message.replace("%MONETARY_UNIT%", this.getMonetaryUnit()));
 		}
 		return "There are no message with key \"" + key + "\"";
 	}
@@ -242,6 +243,24 @@ public class EconomyAPI extends PluginBase implements Listener{
 	
 	public String getMonetaryUnit(){
 		return this.getConfig().get("money.monetary-unit", "$");
+	}
+	
+	public double getDefaultMoney(){
+		if(this.getConfig().isDouble("money.default")){
+			return this.getConfig().get("money.default", 1000D);
+		}else if(this.getConfig().isLong("money.default")){
+			return this.getConfig().getLong("money.default", 1000);
+		}
+		return 1000;
+	}
+	
+	public double getMaxMoney(){
+		if(this.getConfig().isDouble("money.max")){
+			return this.getConfig().get("money.max", 9999999999D);
+		}else if(this.getConfig().isLong("money.max")){
+			return this.getConfig().getLong("money.max", 9999999999L);
+		}
+		return 9999999999D;
 	}
 	
 	public void saveAll(){
